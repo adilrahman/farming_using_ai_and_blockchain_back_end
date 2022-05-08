@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import pickle
 import numpy as np
 import json
+import uvicorn
 
 app = FastAPI()
 
@@ -25,6 +26,7 @@ class CropRecommend(BaseModel):
 
 @app.post("/crop_recommend")
 async def crop_recommendation(cropRecommend : CropRecommend):
+    print("sdsdsdsds")
     N = int(cropRecommend.N)
     P = int(cropRecommend.P)
     K = int(cropRecommend.P)
@@ -36,12 +38,27 @@ async def crop_recommendation(cropRecommend : CropRecommend):
     inputs = np.array([[N,P,K,temp,humidity,pH,rainFall]])
     predictions = CROP_RECOMMENDATION_MODEL.predict_proba(inputs)
 
-    results = {}
+    response = []
 
     for i in zip(CROP_RECOMMENDATION_MODEL.classes_,predictions[0]):
         if i[1] > 0.1:
-            results[float(i[1])] = i[0] 
+            result = {}
+            result[float(i[1])] = i[0] 
+            response.append(result)
+
+    return response
+
+class T(BaseModel):
+    msg : str
+
+@app.post("/testing")
+def test(t : T):
+    return t
+
+@app.get("/")
+def home():
+    return "{ 'message' : 'welcome home' }"
 
 
-    return results
-
+if __name__ == "__main__":
+    uvicorn.run(app,host="192.168.43.135",port=8080)
